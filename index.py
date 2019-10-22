@@ -40,11 +40,11 @@ class MainApp(QMainWindow, FROM_CLASS):
         # botão search da aba Download Youtube Playlist
         self.pushButton_8.clicked.connect(self.Get_Youtube_Video_Playlist)
         # botão browse da aba youtube video downloader
-        self.pushButton_3.clicked.connect(self.Save_Browse)
+        self.pushButton_3.clicked.connect(self.Save_Browse_Video)
         # botão Start Download na aba Download Youtube Playlist
         self.pushButton_6.clicked.connect(self.Playlist_Download)
         # botão browse da aba Playlist video downloader
-        self.pushButton_5.clicked.connect(self.Save_Browse)
+        self.pushButton_5.clicked.connect(self.Save_Browse_Playlist)
 
 
     def Handel_Browse(self):
@@ -58,8 +58,15 @@ class MainApp(QMainWindow, FROM_CLASS):
         read = blocknum * blocksize
         if totalsize > 0:
             percent = read * 100 / totalsize
-            self.progressBar.setValue(percent)
-            QApplication.processEvents() # Not responding
+            if self.pushButton.clicked:
+                self.progressBar.setValue(percent)
+                QApplication.processEvents()  # Not responding
+            elif self.pushButton_4.clicked:
+                self.proggressBar_2.setValu(percent)
+                QApplication.processEvents()  # Not responding
+            elif self.pushButton_6.clicked:
+                self.progressBar_3.setValue(percent)
+                QApplication.processEvents()  # Not responding
 
 
     def Download(self):
@@ -68,18 +75,26 @@ class MainApp(QMainWindow, FROM_CLASS):
         save_location = self.lineEdit_2.text()
         try:
             urllib.request.urlretrieve(url, save_location, self.Handel_Progress)
+            QApplication.processEvents()  # Not responding
         except Exception:
-            QMessageBox.warning(self, 'Erro no download!', 'O download falhou!')
+            QMessageBox.warning(self, 'Download Error!', 'Download Failed!')
             return
-        QMessageBox.information(self, 'Download completo!', 'O download terminou!')
+        QMessageBox.information(self, 'Download complete!', 'Download finished!')
         self.progressBar.setValue(0)
         self.lineEdit.setText('')
         self.lineEdit_2.setText('')
 
-    def Save_Browse(self):
+    def Save_Browse_Video(self):
         save = QFileDialog.getExistingDirectory(self, 'Select Download Directory')
+        self.pushButton_3.clicked
         self.lineEdit_4.setText(save)
-        self.lineEdit_5.text(save)
+        QApplication.processEvents()  # Not responding
+
+    def Save_Browse_Playlist(self):
+        save = QFileDialog.getExistingDirectory(self, 'Select Download Directory')
+        self.pushButton_5.clicked
+        self.lineEdit_5.setText(save)
+        QApplication.processEvents()  # Not responding
 
     def Get_Youtube_Video(self):
         video_link = self.lineEdit_3.text()
@@ -95,8 +110,8 @@ class MainApp(QMainWindow, FROM_CLASS):
         videos_links = pafy.get_playlist(playlist_link)
         videos_items = videos_links['items']
         quality_list = []
+        extensions_list = []
         for video in videos_items:
-            # ToDo: obter link do video
             video_data = video['pafy']
             video_link = video_data.watchv_url
             data = pafy.new(video_link)
@@ -104,14 +119,16 @@ class MainApp(QMainWindow, FROM_CLASS):
             for s in st:
                 size = humanize.naturalsize(s.get_filesize())
                 extension_quality = s.extension + s.quality
-                data = f'Format: {s.mediatype} - Extension: {s.extension} - Quality: {s.quality} - Size: {size}'
-                if extension_quality not in quality_list:
+                if extension_quality not in extensions_list:
+                    data = f'Format: {s.mediatype} - Extension: {s.extension} - Quality: {s.quality} - Size: {size}'
                     quality_list.append(data)
+                    extensions_list.append(extension_quality)
                 else:
-                    continue
+                    pass
 
         for value in quality_list:
-            self.comboBox_2.addItem(data)
+            self.comboBox_2.addItem(value)
+
 
     def Download_Youtube_Video(self):
         video_link = self.lineEdit_3.text()
@@ -119,8 +136,8 @@ class MainApp(QMainWindow, FROM_CLASS):
         v = pafy.new(video_link)
         st = v.allstreams
         quality = self.comboBox.currentIndex()
-
         down = st[quality].download(filepath=save_location)
+        QApplication.processEvents()  # Not responding
         QMessageBox.information(self, 'Download Complete!', 'The Video Download Finished!')
 
     def Playlist_Download(self):
@@ -128,18 +145,27 @@ class MainApp(QMainWindow, FROM_CLASS):
         save_location = self.lineEdit_5.text()
         playlist = pafy.get_playlist(playlist_url)
         videos = playlist['items']
-
         os.chdir(save_location)
+        QApplication.processEvents()  # Not responding
         if os.path.exists(str(playlist['title'])):
-            os.chdir(str(playlist['title']))
+            location = os.chdir(str(playlist['title']))
         else:
             os.mkdir(str(playlist['title']))
-            os.chdir(str(playlist['title']))
+            location = os.chdir(str(playlist['title']))
 
         for video in videos:
-            p = video['pafy']
-            best = p.getbest(preftype='mp4')
-            best.download()
+            video_data = video['pafy']
+            video_link = video_data.watchv_url
+            data = pafy.new(video_link)
+            st = data.allstreams
+            quality = self.comboBox_2.currentIndex()
+            titulo = str(video_data.title)
+            self.lineEdit_7.setText(titulo)
+            QApplication.processEvents()  # Not responding
+            down = st[quality].download(filepath=location)
+            QApplication.processEvents()  # Not responding
+
+        QMessageBox.information(self, 'Download Complete!', 'The Videos Download Finished!')
 
 
 def main():
